@@ -1,0 +1,24 @@
+{
+  "name": "@voloide/editable-table",
+  "version": "1.0.3",
+  "description": "Reusable editable table component for Vue 3 + Quasar",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "vite build"
+  },
+  "peerDependencies": {
+    "vue": "^3.0.0",
+    "quasar": "^2.0.0"
+  },
+  "files": [
+    "dist"
+  ],
+  "author": "Voloide Tamele",
+  "license": "MIT"
+}

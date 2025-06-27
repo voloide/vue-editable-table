@@ -1,0 +1,5 @@
+# Ignore tudo, exceto:
+*
+!dist/
+!README.md
+!package.json
