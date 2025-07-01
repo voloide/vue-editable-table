@@ -104,17 +104,6 @@ const getVisibleActions = computed(() => {
   }
 })
 
-const resolveEditComponent = (col) => {
-  const type = col.editType === 'select'
-    ? 'q-select'
-    : col.editType === 'toggle'
-      ? 'q-toggle'
-      : 'q-input'
-  console.log(`editType for column "${col.name}" is "${col.editType}", rendering component: ${type}`)
-  return type
-}
-
-
 const onRequest = (props) => {
   paginationLocal.value = {
     ...props.pagination,
@@ -123,6 +112,7 @@ const onRequest = (props) => {
   emit('request', props)
 }
 
+// retorna as props certas com base no tipo de edição
 const getEditProps = (col) => {
   if (col.editType === 'select') {
     const optionsKey = col.editOptionsKey
@@ -162,7 +152,7 @@ const getEditProps = (col) => {
         <template #action>
           <q-input
             outlined
-            label="Pesquisar por Nome, descrição"
+            label="Pesquisar por Nome, descrição, Código"
             dense
             style="width: 300px;"
             color="white"
@@ -233,7 +223,7 @@ const getEditProps = (col) => {
           <q-td :style="col.style">
             <template v-if="isEditing(row)">
               <component
-                :is="resolveEditComponent(col)"
+                :is="col.editType === 'select' ? 'q-select' : col.editType === 'toggle' ? 'q-toggle' : 'q-input'"
                 v-model="row[col.editValueField || col.field]"
                 v-bind="getEditProps(col)"
               />
