@@ -1,31 +1,31 @@
-import { Loading as N, QSpinnerRings as ee, QCard as M, QCardSection as $, QBanner as W, QInput as X, QIcon as Y, QBtn as h, QTooltip as P, QTable as Z, QTd as O, Quasar as te, QToggle as ae, QSelect as ne } from "quasar";
-import { ref as q, watch as Q, watchEffect as le, onBeforeUnmount as ie, computed as F, createBlock as v, openBlock as c, unref as t, withCtx as u, createVNode as p, createElementVNode as oe, toDisplayString as _, createCommentVNode as V, renderSlot as se, withKeys as re, createTextVNode as x, createSlots as de, createElementBlock as R, Fragment as H, renderList as J, normalizeStyle as ue, resolveDynamicComponent as ce, mergeProps as ge } from "vue";
-function fe(i, f) {
-  const a = q([...i.modelValue]);
+import { Loading as q, QSpinnerRings as te, QCard as W, QCardSection as N, QBanner as X, QInput as Y, QIcon as Z, QBtn as h, QTooltip as P, QTable as ee, QTd as O, Quasar as ne, QToggle as ae, QSelect as le } from "quasar";
+import { ref as $, watch as Q, watchEffect as ie, onBeforeUnmount as oe, computed as F, createBlock as v, openBlock as c, unref as n, withCtx as u, createVNode as p, createElementVNode as re, toDisplayString as _, createCommentVNode as V, renderSlot as se, withKeys as de, createTextVNode as x, createSlots as ue, createElementBlock as R, Fragment as J, renderList as M, normalizeStyle as ce, resolveDynamicComponent as ge, mergeProps as fe } from "vue";
+function me(i, f) {
+  const a = $([...i.modelValue]);
   Q(() => i.modelValue, (e) => {
     a.value = [...e];
   });
   let b = !1;
-  le(() => {
+  ie(() => {
     i.loading ? b || (b = !0, setTimeout(() => {
-      N.show({ spinner: ee });
-    }, 0)) : b && (b = !1, N.hide());
-  }), ie(() => N.hide());
-  const r = q(/* @__PURE__ */ new Set()), k = (e) => r.value.has(e), A = F(() => r.value.size > 0), w = F(
+      q.show({ spinner: te });
+    }, 0)) : b && (b = !1, q.hide());
+  }), oe(() => q.hide());
+  const s = $(/* @__PURE__ */ new Set()), E = (e) => s.value.has(e), T = F(() => s.value.size > 0), w = F(
     () => i.columns.filter((e) => e.name !== "actions")
   );
   return {
     rows: a,
-    editingRows: r,
-    isEditing: k,
-    isEditingAnyRow: A,
+    editingRows: s,
+    isEditing: E,
+    isEditingAnyRow: T,
     addRow: () => {
       var g;
       if (i.useExternalAdd) {
         f("add");
         return;
       }
-      if (A.value) {
+      if (T.value) {
         (g = i.confirmError) == null || g.call(i, "Termine a edição atual antes de criar um novo registo.");
         return;
       }
@@ -33,10 +33,10 @@ function fe(i, f) {
         _isNew: !0,
         lifeCycleStatus: "ACTIVE"
       };
-      w.value.forEach((y) => {
-        const E = y.editValueField || y.field;
-        e[E] = "";
-      }), a.value.push(e), r.value.add(e), f("update:modelValue", [...a.value]);
+      w.value.forEach((m) => {
+        const k = m.editValueField || m.field;
+        e[k] = "";
+      }), a.value.push(e), s.value.add(e), f("update:modelValue", [...a.value]);
     },
     editRow: (e) => {
       var g;
@@ -44,51 +44,51 @@ function fe(i, f) {
         f("edit", e);
         return;
       }
-      if (A.value) {
+      if (T.value) {
         (g = i.confirmError) == null || g.call(i, "Termine a edição atual antes de editar outro registo.");
         return;
       }
-      e._backup = { ...e }, r.value.add(e);
+      e._backup = { ...e }, s.value.add(e);
     },
     cancelEdit: (e) => {
-      e._isNew ? a.value = a.value.filter((g) => g !== e) : e._backup && (Object.assign(e, e._backup), delete e._backup), r.value.delete(e), f("update:modelValue", [...a.value]);
+      e._isNew ? a.value = a.value.filter((g) => g !== e) : e._backup && (Object.assign(e, e._backup), delete e._backup), s.value.delete(e), f("update:modelValue", [...a.value]);
     },
     saveRow: async (e) => {
-      var E;
-      const y = w.value.filter((o) => o.editType !== "toggle").map((o) => o.editValueField || o.field).find((o) => {
-        const m = e[o];
-        return m == null || m === "";
+      var k;
+      const m = w.value.filter((r) => r.editType !== "toggle").map((r) => r.editValueField || r.field).find((r) => {
+        const y = e[r];
+        return y == null || y === "";
       });
-      if (y) {
-        const o = i.columns.find((C) => (C.editValueField || C.field) === y), m = (o == null ? void 0 : o.label) || y;
-        (E = i.confirmError) == null || E.call(i, `O campo "${m}" é obrigatório.`);
+      if (m) {
+        const r = i.columns.find((C) => (C.editValueField || C.field) === m), y = (r == null ? void 0 : r.label) || m;
+        (k = i.confirmError) == null || k.call(i, `O campo "${y}" é obrigatório.`);
         return;
       }
       try {
-        const o = await new Promise((m, C) => {
-          f("save", e, { resolve: m, reject: C });
+        const r = await new Promise((y, C) => {
+          f("save", e, { resolve: y, reject: C });
         });
-        Object.assign(e, o), delete e._backup, delete e._isNew, r.value.delete(e), f("update:modelValue", [...a.value]);
-      } catch (o) {
-        console.error("Erro ao salvar a linha:", o);
+        Object.assign(e, r), delete e._backup, delete e._isNew, s.value.delete(e), f("update:modelValue", [...a.value]);
+      } catch (r) {
+        console.error("Erro ao salvar a linha:", r);
       }
     },
     deleteRow: async (e) => {
-      var g, y;
-      if (r.value.size > 0 && !k(e)) {
+      var g, m;
+      if (s.value.size > 0 && !E(e)) {
         (g = i.confirmError) == null || g.call(i, "Termine a edição atual antes de apagar outro registo.");
         return;
       }
       try {
-        if (!await ((y = i.confirmDelete) == null ? void 0 : y.call(
+        if (!await ((m = i.confirmDelete) == null ? void 0 : m.call(
           i,
           "Deseja realmente apagar este registo? Esta ação não poderá ser desfeita."
         ))) return;
-        await new Promise((o, m) => {
-          f("delete", e, { resolve: o, reject: m });
-        }), a.value = a.value.filter((o) => o !== e), r.value.delete(e), f("update:modelValue", [...a.value]);
-      } catch (E) {
-        console.error("Erro ao apagar a linha:", E);
+        await new Promise((r, y) => {
+          f("delete", e, { resolve: r, reject: y });
+        }), a.value = a.value.filter((r) => r !== e), s.value.delete(e), f("update:modelValue", [...a.value]);
+      } catch (k) {
+        console.error("Erro ao apagar a linha:", k);
       }
     },
     search: (e) => {
@@ -100,10 +100,10 @@ function fe(i, f) {
     visibleColumns: w
   };
 }
-const me = { class: "text-subtitle2 text-primary" }, ye = { key: 0 }, pe = {
+const ye = { class: "text-subtitle2 text-primary" }, pe = { key: 0 }, be = {
   key: 1,
   class: "q-gutter-sm"
-}, be = {
+}, ve = {
   __name: "EditableTable",
   props: {
     title: String,
@@ -145,120 +145,123 @@ const me = { class: "text-subtitle2 text-primary" }, ye = { key: 0 }, pe = {
     "custom-action"
   ],
   setup(i, { emit: f }) {
-    var m, C, K, L, G;
-    const a = i, b = f, r = q(""), k = q({
-      sortBy: ((m = a.pagination) == null ? void 0 : m.sortBy) ?? "id",
-      descending: ((C = a.pagination) == null ? void 0 : C.descending) ?? !1,
-      page: ((K = a.pagination) == null ? void 0 : K.page) ?? 1,
-      rowsPerPage: ((L = a.pagination) == null ? void 0 : L.rowsPerPage) ?? 10,
-      rowsNumber: ((G = a.pagination) == null ? void 0 : G.rowsNumber) ?? 0
+    var C, K, L, G, H;
+    const a = i, b = f, s = $(""), E = $({
+      sortBy: ((C = a.pagination) == null ? void 0 : C.sortBy) ?? "id",
+      descending: ((K = a.pagination) == null ? void 0 : K.descending) ?? !1,
+      page: ((L = a.pagination) == null ? void 0 : L.page) ?? 1,
+      rowsPerPage: ((G = a.pagination) == null ? void 0 : G.rowsPerPage) ?? 10,
+      rowsNumber: ((H = a.pagination) == null ? void 0 : H.rowsNumber) ?? 0
     });
-    Q(() => a.pagination, (n) => {
-      k.value = {
-        sortBy: (n == null ? void 0 : n.sortBy) ?? "id",
-        descending: (n == null ? void 0 : n.descending) ?? !1,
-        page: (n == null ? void 0 : n.page) ?? 1,
-        rowsPerPage: (n == null ? void 0 : n.rowsPerPage) ?? 10,
-        rowsNumber: (n == null ? void 0 : n.rowsNumber) ?? 0
+    Q(() => a.pagination, (t) => {
+      E.value = {
+        sortBy: (t == null ? void 0 : t.sortBy) ?? "id",
+        descending: (t == null ? void 0 : t.descending) ?? !1,
+        page: (t == null ? void 0 : t.page) ?? 1,
+        rowsPerPage: (t == null ? void 0 : t.rowsPerPage) ?? 10,
+        rowsNumber: (t == null ? void 0 : t.rowsNumber) ?? 0
       };
     }), Q(() => {
-      var n;
-      return (n = a.pagination) == null ? void 0 : n.rowsNumber;
-    }, (n) => {
-      k.value.rowsNumber = n ?? 0;
+      var t;
+      return (t = a.pagination) == null ? void 0 : t.rowsNumber;
+    }, (t) => {
+      E.value.rowsNumber = t ?? 0;
     });
     const {
-      rows: A,
+      rows: T,
       isEditing: w,
-      isEditingAnyRow: B,
+      isEditingAnyRow: A,
       addRow: D,
       editRow: I,
       cancelEdit: U,
       saveRow: j,
       deleteRow: z,
-      search: T,
+      search: S,
       toggleStatus: e,
       visibleColumns: g
-    } = fe(a, b), y = F(() => (n) => a.extraActions.filter((s) => typeof s.visible == "function" ? s.visible(n) : s.visible !== !1)), E = (n) => {
-      k.value = {
-        ...n.pagination,
-        rowsNumber: k.value.rowsNumber
-      }, b("request", n);
-    }, o = (n) => {
-      if (n.editType === "select") {
-        const s = n.editOptionsKey;
+    } = me(a, b), m = F(() => (t) => a.extraActions.filter((o) => typeof o.visible == "function" ? o.visible(t) : o.visible !== !1)), k = (t) => {
+      const o = t.editType === "select" ? "q-select" : t.editType === "toggle" ? "q-toggle" : "q-input";
+      return console.log(`editType for column "${t.name}" is "${t.editType}", rendering component: ${o}`), o;
+    }, r = (t) => {
+      E.value = {
+        ...t.pagination,
+        rowsNumber: E.value.rowsNumber
+      }, b("request", t);
+    }, y = (t) => {
+      if (t.editType === "select") {
+        const o = t.editOptionsKey;
         return {
-          options: a[s] || [],
+          options: a[o] || [],
           optionValue: "value",
           optionLabel: "label",
           emitValue: !0,
           mapOptions: !0,
           dense: !0,
           outlined: !0,
-          placeholder: n.placeholder || "Selecionar"
+          placeholder: t.placeholder || "Selecionar"
         };
       }
-      return n.editType === "toggle" ? {
+      return t.editType === "toggle" ? {
         dense: !0,
         keepColor: !0,
         color: "primary"
       } : {
         dense: !0,
         outlined: !0,
-        placeholder: n.placeholder || n.label
+        placeholder: t.placeholder || t.label
       };
     };
-    return (n, s) => (c(), v(t(M), {
+    return (t, o) => (c(), v(n(W), {
       class: "q-pa-none",
       flat: "",
       bordered: ""
     }, {
       default: u(() => [
-        p(t($), { class: "text-h6 q-pa-none" }, {
+        p(n(N), { class: "text-h6 q-pa-none" }, {
           default: u(() => [
-            p(t(W), {
+            p(n(X), {
               dense: "",
               "inline-actions": "",
               class: "text-primary bg-grey-3"
             }, {
               action: u(() => [
-                a.hideSearchInput ? V("", !0) : (c(), v(t(X), {
+                a.hideSearchInput ? V("", !0) : (c(), v(n(Y), {
                   key: 0,
                   outlined: "",
                   label: "Pesquisar por Nome, descrição",
                   dense: "",
                   style: { width: "300px" },
                   color: "white",
-                  modelValue: r.value,
-                  "onUpdate:modelValue": s[1] || (s[1] = (l) => r.value = l),
-                  onKeyup: s[2] || (s[2] = re((l) => t(T)(r.value), ["enter"])),
-                  disable: t(B)
+                  modelValue: s.value,
+                  "onUpdate:modelValue": o[1] || (o[1] = (l) => s.value = l),
+                  onKeyup: o[2] || (o[2] = de((l) => n(S)(s.value), ["enter"])),
+                  disable: n(A)
                 }, {
                   append: u(() => [
-                    r.value ? (c(), v(t(Y), {
+                    s.value ? (c(), v(n(Z), {
                       key: 0,
                       name: "close",
-                      onClick: s[0] || (s[0] = () => {
-                        r.value = "", t(T)("");
+                      onClick: o[0] || (o[0] = () => {
+                        s.value = "", n(S)("");
                       }),
                       class: "cursor-pointer"
                     })) : V("", !0)
                   ]),
                   _: 1
                 }, 8, ["modelValue", "disable"])),
-                a.hideSearchButton ? V("", !0) : (c(), v(t(h), {
+                a.hideSearchButton ? V("", !0) : (c(), v(n(h), {
                   key: 1,
                   outline: "",
                   style: { color: "goldenrod" },
                   dense: "",
                   icon: "search",
-                  onClick: s[3] || (s[3] = (l) => t(T)(r.value)),
-                  disable: t(B),
+                  onClick: o[3] || (o[3] = (l) => n(S)(s.value)),
+                  disable: n(A),
                   class: "q-ml-sm"
                 }, {
                   default: u(() => [
-                    p(t(P), { class: "bg-primary" }, {
-                      default: u(() => s[6] || (s[6] = [
+                    p(n(P), { class: "bg-primary" }, {
+                      default: u(() => o[6] || (o[6] = [
                         x("Pesquisar")
                       ])),
                       _: 1,
@@ -267,18 +270,18 @@ const me = { class: "text-subtitle2 text-primary" }, ye = { key: 0 }, pe = {
                   ]),
                   _: 1
                 }, 8, ["disable"])),
-                a.hideAddButton ? V("", !0) : (c(), v(t(h), {
+                a.hideAddButton ? V("", !0) : (c(), v(n(h), {
                   key: 2,
                   outline: "",
                   style: { color: "goldenrod" },
                   dense: "",
                   icon: "add",
                   class: "q-ml-sm",
-                  onClick: s[4] || (s[4] = (l) => a.useExternalAdd ? b("add") : t(D)()),
-                  disable: t(B)
+                  onClick: o[4] || (o[4] = (l) => a.useExternalAdd ? b("add") : n(D)()),
+                  disable: n(A)
                 }, {
                   default: u(() => [
-                    p(t(P), { class: "bg-primary" }, {
+                    p(n(P), { class: "bg-primary" }, {
                       default: u(() => [
                         x("Criar novos " + _(a.title), 1)
                       ]),
@@ -287,85 +290,85 @@ const me = { class: "text-subtitle2 text-primary" }, ye = { key: 0 }, pe = {
                   ]),
                   _: 1
                 }, 8, ["disable"])),
-                se(n.$slots, "action-buttons")
+                se(t.$slots, "action-buttons")
               ]),
               default: u(() => [
-                oe("span", me, _(a.title), 1)
+                re("span", ye, _(a.title), 1)
               ]),
               _: 3
             })
           ]),
           _: 3
         }),
-        p(t($), { class: "q-pa-md" }, {
+        p(n(N), { class: "q-pa-md" }, {
           default: u(() => [
-            p(t(Z), {
-              rows: t(A),
+            p(n(ee), {
+              rows: n(T),
               columns: a.columns,
               "row-key": "id",
               flat: "",
               dense: "",
               separator: "horizontal",
-              pagination: k.value,
-              "onUpdate:pagination": s[5] || (s[5] = (l) => k.value = l),
+              pagination: E.value,
+              "onUpdate:pagination": o[5] || (o[5] = (l) => E.value = l),
               "rows-per-page-options": a.rowsPerPageOptions,
-              "pagination-label": (l, d, S) => `${l}-${d} de ${S} registros`,
-              onRequest: E
-            }, de({
+              "pagination-label": (l, d, B) => `${l}-${d} de ${B} registros`,
+              onRequest: r
+            }, ue({
               "body-cell-actions": u(({ row: l }) => [
-                p(t(O), { class: "text-center" }, {
+                p(n(O), { class: "text-center" }, {
                   default: u(() => [
-                    t(w)(l) ? (c(), R("div", ye, [
-                      p(t(h), {
+                    n(w)(l) ? (c(), R("div", pe, [
+                      p(n(h), {
                         dense: "",
                         flat: "",
                         icon: "check",
                         color: "green",
-                        onClick: (d) => t(j)(l)
+                        onClick: (d) => n(j)(l)
                       }, null, 8, ["onClick"]),
-                      p(t(h), {
+                      p(n(h), {
                         dense: "",
                         flat: "",
                         icon: "close",
                         color: "orange",
-                        onClick: (d) => t(U)(l)
+                        onClick: (d) => n(U)(l)
                       }, null, 8, ["onClick"])
-                    ])) : (c(), R("div", pe, [
-                      a.hideToggleStatus ? V("", !0) : (c(), v(t(h), {
+                    ])) : (c(), R("div", be, [
+                      a.hideToggleStatus ? V("", !0) : (c(), v(n(h), {
                         key: 0,
                         dense: "",
                         flat: "",
                         icon: l.lifeCycleStatus === "ACTIVE" ? "toggle_on" : "toggle_off",
                         color: l.lifeCycleStatus === "ACTIVE" ? "green" : "grey",
-                        onClick: (d) => t(e)(l),
-                        disable: t(B)
+                        onClick: (d) => n(e)(l),
+                        disable: n(A)
                       }, null, 8, ["icon", "color", "onClick", "disable"])),
-                      a.hideEdit ? V("", !0) : (c(), v(t(h), {
+                      a.hideEdit ? V("", !0) : (c(), v(n(h), {
                         key: 1,
                         dense: "",
                         flat: "",
                         icon: "edit",
                         color: "primary",
-                        onClick: (d) => a.useExternalEdit ? b("edit", l) : t(I)(l)
+                        onClick: (d) => a.useExternalEdit ? b("edit", l) : n(I)(l)
                       }, null, 8, ["onClick"])),
-                      a.hideDelete ? V("", !0) : (c(), v(t(h), {
+                      a.hideDelete ? V("", !0) : (c(), v(n(h), {
                         key: 2,
                         dense: "",
                         flat: "",
                         icon: "delete",
                         color: "red",
-                        onClick: (d) => t(z)(l)
+                        onClick: (d) => n(z)(l)
                       }, null, 8, ["onClick"])),
-                      (c(!0), R(H, null, J(y.value(l), (d, S) => (c(), v(t(h), {
-                        key: S,
+                      (c(!0), R(J, null, M(m.value(l), (d, B) => (c(), v(n(h), {
+                        key: B,
                         dense: "",
                         flat: "",
                         icon: d.icon,
                         color: d.color || "primary",
-                        onClick: (ve) => b(d.emit || "extra-action", l)
+                        onClick: (Ee) => b(d.emit || "extra-action", l)
                       }, {
                         default: u(() => [
-                          p(t(P), { class: "bg-primary" }, {
+                          p(n(P), { class: "bg-primary" }, {
                             default: u(() => [
                               x(_(d.tooltip), 1)
                             ]),
@@ -381,18 +384,18 @@ const me = { class: "text-subtitle2 text-primary" }, ye = { key: 0 }, pe = {
               ]),
               _: 2
             }, [
-              J(t(g), (l) => ({
+              M(n(g), (l) => ({
                 name: `body-cell-${l.name}`,
                 fn: u(({ row: d }) => [
-                  p(t(O), {
-                    style: ue(l.style)
+                  p(n(O), {
+                    style: ce(l.style)
                   }, {
                     default: u(() => [
-                      t(w)(d) ? (c(), v(ce(l.editType === "select" ? "q-select" : l.editType === "toggle" ? "q-toggle" : "q-input"), ge({
+                      n(w)(d) ? (c(), v(ge(k(l)), fe({
                         key: 0,
                         modelValue: d[l.editValueField || l.field],
-                        "onUpdate:modelValue": (S) => d[l.editValueField || l.field] = S
-                      }, o(l)), null, 16, ["modelValue", "onUpdate:modelValue"])) : (c(), R(H, { key: 1 }, [
+                        "onUpdate:modelValue": (B) => d[l.editValueField || l.field] = B
+                      }, y(l)), null, 16, ["modelValue", "onUpdate:modelValue"])) : (c(), R(J, { key: 1 }, [
                         x(_(d[l.field] || "—"), 1)
                       ], 64))
                     ]),
@@ -408,26 +411,26 @@ const me = { class: "text-subtitle2 text-primary" }, ye = { key: 0 }, pe = {
       _: 3
     }));
   }
-}, he = {
+}, Ce = {
   install(i) {
-    i.use(te, {
+    i.use(ne, {
       components: {
-        QCard: M,
-        QCardSection: $,
-        QBanner: W,
-        QInput: X,
-        QIcon: Y,
+        QCard: W,
+        QCardSection: N,
+        QBanner: X,
+        QInput: Y,
+        QIcon: Z,
         QBtn: h,
-        QTable: Z,
+        QTable: ee,
         QTd: O,
-        QSelect: ne,
+        QSelect: le,
         QToggle: ae,
         QTooltip: P
       }
-    }), i.component("EditableTable", be);
+    }), i.component("EditableTable", ve);
   }
 };
 export {
-  be as EditableTable,
-  he as default
+  ve as EditableTable,
+  Ce as default
 };
