@@ -15,7 +15,6 @@ import {
   QTooltip
 } from 'quasar'
 
-
 const props = defineProps({
   title: String,
   modelValue: Array,
@@ -44,8 +43,6 @@ const props = defineProps({
   }
 })
 
-const searchParams = ref('')
-
 const emit = defineEmits([
   'update:modelValue',
   'save',
@@ -59,22 +56,14 @@ const emit = defineEmits([
   'custom-action'
 ])
 
+const searchParams = ref('')
+
 const paginationLocal = ref({
   sortBy: props.pagination?.sortBy ?? 'id',
   descending: props.pagination?.descending ?? false,
   page: props.pagination?.page ?? 1,
   rowsPerPage: props.pagination?.rowsPerPage ?? 10,
   rowsNumber: props.pagination?.rowsNumber ?? 0
-})
-
-const getVisibleActions = computed(() => {
-  return (row) => {
-    return props.extraActions.filter(action => {
-      return typeof action.visible === 'function'
-        ? action.visible(row)
-        : action.visible !== false
-    })
-  }
 })
 
 watch(() => props.pagination, (val) => {
@@ -105,12 +94,53 @@ const {
   visibleColumns
 } = useEditableTable(props, emit)
 
+const getVisibleActions = computed(() => {
+  return (row) => {
+    return props.extraActions.filter(action => {
+      return typeof action.visible === 'function'
+        ? action.visible(row)
+        : action.visible !== false
+    })
+  }
+})
+
 const onRequest = (props) => {
   paginationLocal.value = {
     ...props.pagination,
     rowsNumber: paginationLocal.value.rowsNumber
   }
   emit('request', props)
+}
+
+// retorna as props certas com base no tipo de edição
+const getEditProps = (col) => {
+  if (col.editType === 'select') {
+    const optionsKey = col.editOptionsKey
+    return {
+      options: props[optionsKey] || [],
+      optionValue: 'value',
+      optionLabel: 'label',
+      emitValue: true,
+      mapOptions: true,
+      dense: true,
+      outlined: true,
+      placeholder: col.placeholder || 'Selecionar'
+    }
+  }
+
+  if (col.editType === 'toggle') {
+    return {
+      dense: true,
+      keepColor: true,
+      color: 'primary'
+    }
+  }
+
+  return {
+    dense: true,
+    outlined: true,
+    placeholder: col.placeholder || col.label
+  }
 }
 </script>
 
@@ -122,7 +152,7 @@ const onRequest = (props) => {
         <template #action>
           <q-input
             outlined
-            label="Pesquisar por Nome, descrição, Código"
+            label="Pesquisar por Nome, descrição"
             dense
             style="width: 300px;"
             color="white"
@@ -168,7 +198,6 @@ const onRequest = (props) => {
           </q-btn>
 
           <slot name="action-buttons" />
-
         </template>
       </q-banner>
     </q-card-section>
@@ -192,94 +221,15 @@ const onRequest = (props) => {
           #[`body-cell-${col.name}`]="{ row }"
         >
           <q-td :style="col.style">
-            <template v-if="col.field === 'lifeCycleStatus'">
-              <q-toggle
-                v-if="isEditing(row)"
-                :model-value="row.lifeCycleStatus === 'ACTIVE'"
-                @update:model-value="val => row.lifeCycleStatus = val ? 'ACTIVE' : 'INACTIVE'"
-                color="primary"
-                dense
-                keep-color
-              />
-              <q-icon
-                v-else
-                :name="row.lifeCycleStatus === 'ACTIVE' ? 'check_circle' : 'cancel'"
-                :color="row.lifeCycleStatus === 'ACTIVE' ? 'green' : 'red'"
+            <template v-if="isEditing(row)">
+              <component
+                :is="col.editType === 'select' ? 'q-select' : col.editType === 'toggle' ? 'q-toggle' : 'q-input'"
+                v-model="row[col.editValueField || col.field]"
+                v-bind="getEditProps(col)"
               />
             </template>
-
-            <template v-else-if="col.field === 'programId'">
-              <template v-if="isEditing(row)">
-                <q-select
-                  v-model="row.programId"
-                  :options="props.programOptions"
-                  option-value="value"
-                  option-label="label"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  placeholder="Selecionar programa"
-                />
-              </template>
-              <template v-else>
-                {{ row.program?.name || row.programActivity?.program.name || '—' }}
-              </template>
-            </template>
-
-            <template v-else-if="col.field === 'provinceId'">
-              <template v-if="isEditing(row)">
-                <q-select
-                  v-model="row.provinceId"
-                  :options="props.provinceOptions"
-                  option-value="value"
-                  option-label="label"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  placeholder="Selecionar província"
-                  @update:model-value="() => row.districtId = null"
-                />
-              </template>
-              <template v-else>
-                {{ row.district?.province?.designation || '—' }}
-              </template>
-            </template>
-
-
-            <template v-else-if="col.field === 'districtId'">
-              <template v-if="isEditing(row)">
-                <q-select
-                  v-model="row.districtId"
-                  :options="props.districtOptions.filter(d => d.provinceId === row.provinceId)"
-                  option-value="value"
-                  option-label="label"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  placeholder="Selecionar distrito"
-                />
-              </template>
-              <template v-else>
-                {{ row.district?.description || '—' }}
-              </template>
-            </template>
-
-
             <template v-else>
-              <template v-if="isEditing(row)">
-                <q-input
-                  v-model="row[col.field]"
-                  dense
-                  outlined
-                  :placeholder="col.label"
-                />
-              </template>
-              <template v-else>
-                {{ row[col.field] }}
-              </template>
+              {{ row[col.field] || '—' }}
             </template>
           </q-td>
         </template>
@@ -291,8 +241,7 @@ const onRequest = (props) => {
               <q-btn dense flat icon="close" color="orange" @click="cancelEdit(row)" />
             </div>
             <div v-else class="q-gutter-sm">
-              <!-- Botões padrão -->
-             <q-btn
+              <q-btn
                 v-if="!props.hideToggleStatus"
                 dense flat
                 :icon="row.lifeCycleStatus === 'ACTIVE' ? 'toggle_on' : 'toggle_off'"
@@ -310,8 +259,6 @@ const onRequest = (props) => {
                 dense flat icon="delete" color="red"
                 @click="deleteRow(row)"
               />
-
-              <!-- Botões extras -->
               <q-btn
                 v-for="(action, index) in getVisibleActions(row)"
                 :key="index"
@@ -322,11 +269,9 @@ const onRequest = (props) => {
               >
                 <q-tooltip class="bg-primary">{{ action.tooltip }}</q-tooltip>
               </q-btn>
-
             </div>
           </q-td>
         </template>
-
       </q-table>
     </q-card-section>
   </q-card>

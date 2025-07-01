@@ -8,8 +8,8 @@ export function useEditableTable(props, emit) {
     rows.value = [...val]
   })
 
+  // Exibe loading spinner com QSpinnerRings
   let loadingShown = false
-
   watchEffect(() => {
     if (props.loading) {
       if (!loadingShown) {
@@ -26,13 +26,15 @@ export function useEditableTable(props, emit) {
     }
   })
 
-  onBeforeUnmount(() => {
-    Loading.hide()
-  })
+  onBeforeUnmount(() => Loading.hide())
 
   const editingRows = ref(new Set())
   const isEditing = (row) => editingRows.value.has(row)
   const isEditingAnyRow = computed(() => editingRows.value.size > 0)
+
+  const visibleColumns = computed(() =>
+    props.columns.filter(col => col.name !== 'actions')
+  )
 
   const addRow = () => {
     if (props.useExternalAdd) {
@@ -50,10 +52,9 @@ export function useEditableTable(props, emit) {
       lifeCycleStatus: 'ACTIVE'
     }
 
-    props.columns.forEach(col => {
-      if (col.field !== 'actions' && col.field !== 'lifeCycleStatus') {
-        newRow[col.field] = ''
-      }
+    visibleColumns.value.forEach(col => {
+      const field = col.editValueField || col.field
+      newRow[field] = ''
     })
 
     rows.value.push(newRow)
@@ -73,33 +74,28 @@ export function useEditableTable(props, emit) {
     }
 
     row._backup = { ...row }
-    row.programId = row.program?.id ?? null
-    row.serviceId = row.service?.id ?? null
-    row.provinceId = row.district?.province?.id ?? null
-    row.districtId = row.district?.id ?? null
-
     editingRows.value.add(row)
   }
 
   const cancelEdit = (row) => {
     if (row._isNew) {
       rows.value = rows.value.filter(r => r !== row)
-      editingRows.value.delete(row)
-      emit('update:modelValue', [...rows.value])
     } else {
       if (row._backup) {
         Object.assign(row, row._backup)
         delete row._backup
       }
-      delete row.programId
-      editingRows.value.delete(row)
     }
+
+    editingRows.value.delete(row)
+    emit('update:modelValue', [...rows.value])
   }
 
   const saveRow = async (row) => {
+    // Validação obrigatória de campos visíveis
     const requiredFields = visibleColumns.value
-      .map(col => col.field)
-      .filter(field => field !== 'lifeCycleStatus' && field !== 'actions')
+      .filter(col => col.editType !== 'toggle')
+      .map(col => col.editValueField || col.field)
 
     const invalidField = requiredFields.find(field => {
       const value = row[field]
@@ -107,7 +103,7 @@ export function useEditableTable(props, emit) {
     })
 
     if (invalidField) {
-      const col = props.columns.find(c => c.field === invalidField)
+      const col = props.columns.find(c => (c.editValueField || c.field) === invalidField)
       const label = col?.label || invalidField
       props.confirmError?.(`O campo "${label}" é obrigatório.`)
       return
@@ -118,17 +114,11 @@ export function useEditableTable(props, emit) {
         emit('save', row, { resolve, reject })
       })
 
-      if (savedRow?.program) {
-        row.program = savedRow.program
-      }
+      // Atualize campos extras retornados (se houver)
+      Object.assign(row, savedRow)
 
-      if (savedRow?.service) {
-        row.service = savedRow.service
-      }
-
-      delete row.programId
-      delete row.serviceId
       delete row._backup
+      delete row._isNew
 
       editingRows.value.delete(row)
       emit('update:modelValue', [...rows.value])
@@ -147,7 +137,6 @@ export function useEditableTable(props, emit) {
       const confirm = await props.confirmDelete?.(
         'Deseja realmente apagar este registo? Esta ação não poderá ser desfeita.'
       )
-
       if (!confirm) return
 
       await new Promise((resolve, reject) => {
@@ -162,17 +151,13 @@ export function useEditableTable(props, emit) {
     }
   }
 
-  const search = (searchTerm) => {
-    emit('search', searchTerm.trim())
+  const search = (term) => {
+    emit('search', term.trim())
   }
 
   const toggleStatus = (row) => {
     emit('toggle-status', row)
   }
-
-  const visibleColumns = computed(() =>
-    props.columns.filter(col => col.name !== 'actions')
-  )
 
   return {
     rows,
