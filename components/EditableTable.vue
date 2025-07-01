@@ -112,7 +112,6 @@ const onRequest = (props) => {
   emit('request', props)
 }
 
-// retorna as props certas com base no tipo de edição
 const getEditProps = (col) => {
   if (col.editType === 'select') {
     const optionsKey = col.editOptionsKey
