@@ -13,12 +13,16 @@
     "build": "vite build"
   },
   "peerDependencies": {
-    "vue": "^3.0.0",
-    "quasar": "^2.0.0"
+    "quasar": "^2.0.0",
+    "vue": "^3.0.0"
   },
   "files": [
     "dist"
   ],
   "author": "Voloide Tamele",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.4",
+    "vite": "^6.3.5"
+  }
 }

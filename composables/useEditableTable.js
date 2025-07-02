@@ -1,14 +1,15 @@
+
 import { ref, computed, watch, onBeforeUnmount, watchEffect } from 'vue'
 import { Loading, QSpinnerRings } from 'quasar'
 
 export function useEditableTable(props, emit) {
   const rows = ref([...props.modelValue])
+  const dependencyWatchers = new Map()
 
   watch(() => props.modelValue, val => {
     rows.value = [...val]
   })
 
-  // Exibe loading spinner com QSpinnerRings
   let loadingShown = false
   watchEffect(() => {
     if (props.loading) {
@@ -57,10 +58,13 @@ export function useEditableTable(props, emit) {
       newRow[field] = ''
     })
 
-    rows.value.push(newRow)
+    rows.value.unshift(newRow)
     editingRows.value.add(newRow)
-    emit('update:modelValue', [...rows.value])
+
+    // ⚠️ Não emita update:modelValue ainda, deixe para o save
+    // emit('update:modelValue', [...rows.value])
   }
+
 
   const editRow = (row) => {
     if (props.useExternalEdit) {
@@ -75,6 +79,21 @@ export function useEditableTable(props, emit) {
 
     row._backup = { ...row }
     editingRows.value.add(row)
+
+    // watcher para resetar campos dependentes
+    const unwatch = watch(
+      () => props.columns.map(col => row[col.dependsOn]),
+      () => {
+        props.columns.forEach(col => {
+          if (col.dependsOn && col.matchField) {
+            row[col.editValueField || col.field] = null
+          }
+        })
+      },
+      { deep: false }
+    )
+
+    dependencyWatchers.set(row, unwatch)
   }
 
   const cancelEdit = (row) => {
@@ -87,12 +106,16 @@ export function useEditableTable(props, emit) {
       }
     }
 
+    if (dependencyWatchers.has(row)) {
+      dependencyWatchers.get(row)()
+      dependencyWatchers.delete(row)
+    }
+
     editingRows.value.delete(row)
     emit('update:modelValue', [...rows.value])
   }
 
   const saveRow = async (row) => {
-    // Validação obrigatória de campos visíveis
     const requiredFields = visibleColumns.value
       .filter(col => col.editType !== 'toggle')
       .map(col => col.editValueField || col.field)
@@ -114,11 +137,14 @@ export function useEditableTable(props, emit) {
         emit('save', row, { resolve, reject })
       })
 
-      // Atualize campos extras retornados (se houver)
       Object.assign(row, savedRow)
-
       delete row._backup
       delete row._isNew
+
+      if (dependencyWatchers.has(row)) {
+        dependencyWatchers.get(row)()
+        dependencyWatchers.delete(row)
+      }
 
       editingRows.value.delete(row)
       emit('update:modelValue', [...rows.value])
@@ -132,16 +158,22 @@ export function useEditableTable(props, emit) {
       props.confirmError?.('Termine a edição atual antes de apagar outro registo.')
       return
     }
-
     try {
       const confirm = await props.confirmDelete?.(
         'Deseja realmente apagar este registo? Esta ação não poderá ser desfeita.'
       )
       if (!confirm) return
-
+      
       await new Promise((resolve, reject) => {
         emit('delete', row, { resolve, reject })
       })
+
+      console.log('deleteGroupHandler', row)
+
+      if (dependencyWatchers.has(row)) {
+        dependencyWatchers.get(row)()
+        dependencyWatchers.delete(row)
+      }
 
       rows.value = rows.value.filter(r => r !== row)
       editingRows.value.delete(row)

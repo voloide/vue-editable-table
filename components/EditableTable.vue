@@ -113,13 +113,20 @@ const onRequest = (props) => {
 }
 
 // retorna as props certas com base no tipo de edição
-const getEditProps = (col) => {
+const getEditProps = (col, row) => {
   if (col.editType === 'select') {
     const optionsKey = col.editOptionsKey
+    let options = props[optionsKey] || []
+
+    if (col.dependsOn && col.matchField) {
+      const parentValue = row[col.dependsOn]
+      options = options.filter(opt => opt[col.matchField] === parentValue)
+    }
+
     return {
-      options: props[optionsKey] || [],
-      optionValue: 'value',
-      optionLabel: 'label',
+      options,
+      optionValue: col.optionValueKey || 'value',
+      optionLabel: col.optionLabelKey || 'label',
       emitValue: true,
       mapOptions: true,
       dense: true,
@@ -220,20 +227,35 @@ const getEditProps = (col) => {
           :key="col.name"
           #[`body-cell-${col.name}`]="{ row }"
         >
-          <q-td :style="col.style">
-            <template v-if="isEditing(row)">
-              <component
-                :is="col.editType === 'select' ? 'q-select' : col.editType === 'toggle' ? 'q-toggle' : 'q-input'"
+          <q-td :style="col.style" class="q-pa-xs">
+          <template v-if="isEditing(row)">
+            <div style="width: 100%;">
+              <q-select
+                v-if="col.editType === 'select'"
                 v-model="row[col.editValueField || col.field]"
-                v-bind="getEditProps(col)"
+                v-bind="getEditProps(col, row)"
+                class="full-width"
               />
-            </template>
-            <template v-else>
-              {{ row[col.field] || '—' }}
-            </template>
-          </q-td>
-        </template>
 
+              <q-toggle
+                v-else-if="col.editType === 'toggle'"
+                v-model="row[col.editValueField || col.field]"
+                v-bind="getEditProps(col, row)"
+              />
+
+              <q-input
+                v-else
+                v-model="row[col.editValueField || col.field]"
+                v-bind="getEditProps(col, row)"
+                class="full-width"
+              />
+            </div>
+          </template>
+          <template v-else>
+            {{ row[col.field] || '—' }}
+          </template>
+        </q-td>
+        </template>
         <template #body-cell-actions="{ row }">
           <q-td class="text-center">
             <div v-if="isEditing(row)">
