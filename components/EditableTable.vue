@@ -19,6 +19,10 @@ const props = defineProps({
   title: String,
   modelValue: Array,
   columns: Array,
+  selectOptions: {
+    type: Object,
+    default: () => ({})
+  },
   programOptions: Array,
   serviceOptions: Array,
   programActivityOptions: Array,
@@ -53,7 +57,9 @@ const emit = defineEmits([
   'add',
   'edit',
   'extra-action',
-  'custom-action'
+  'custom-action',
+  'validation-error',
+  'editing-change'
 ])
 
 const searchParams = ref('')
@@ -94,6 +100,18 @@ const {
   visibleColumns
 } = useEditableTable(props, emit)
 
+const evalFlag = (flag, row) =>
+  typeof flag === 'function' ? !!flag({ row, props }) : !!flag
+
+const isEditableCol = (col, row) =>
+  (col.editable === undefined ? true : evalFlag(col.editable, row)) &&
+  !evalFlag(col.hideInEdit, row) &&
+  !!col.editType  // must have an editor type
+
+const isDisabledCol = (col, row) => evalFlag(col.disabled, row)
+const isReadonlyCol = (col, row) => evalFlag(col.readonly, row)
+const isRequiredCol = (col, row) => evalFlag(col.required, row)
+
 const getVisibleActions = computed(() => {
   return (row) => {
     return props.extraActions.filter(action => {
@@ -115,14 +133,21 @@ const onRequest = (props) => {
 // retorna as props certas com base no tipo de edição
 const getEditProps = (col, row) => {
   if (col.editType === 'select') {
-    const optionsKey = col.editOptionsKey
-    let options = props[optionsKey] || []
-
+    let options = []
+    if (Array.isArray(col.editOptions)) options = col.editOptions
+    if (!options.length && typeof col.editOptions === 'function') {
+      const out = col.editOptions({ row, props }); if (Array.isArray(out)) options = out
+    }
+    if (!options.length && col.editOptionsKey) {
+      const map = props.selectOptions || {}; options = map[col.editOptionsKey] || []
+    }
+    if (!options.length && col.editOptionsKey && props[col.editOptionsKey]) {
+      options = props[col.editOptionsKey]
+    }
     if (col.dependsOn && col.matchField) {
       const parentValue = row[col.dependsOn]
       options = options.filter(opt => opt[col.matchField] === parentValue)
     }
-
     return {
       options,
       optionValue: col.optionValueKey || 'value',
@@ -131,24 +156,23 @@ const getEditProps = (col, row) => {
       mapOptions: true,
       dense: true,
       outlined: true,
-      placeholder: col.placeholder || 'Selecionar'
+      placeholder: col.placeholder || 'Selecionar',
+      disable: isDisabledCol(col, row),
+      readonly: isReadonlyCol(col, row)
     }
   }
-
   if (col.editType === 'toggle') {
-    return {
-      dense: true,
-      keepColor: true,
-      color: 'primary'
-    }
+    return { dense: true, keepColor: true, color: 'primary', disable: isDisabledCol(col, row), readonly: isReadonlyCol(col, row) }
   }
-
   return {
     dense: true,
     outlined: true,
-    placeholder: col.placeholder || col.label
+    placeholder: col.placeholder || col.label,
+    disable: isDisabledCol(col, row),
+    readonly: isReadonlyCol(col, row)
   }
 }
+
 </script>
 
 <template>
@@ -214,47 +238,39 @@ const getEditProps = (col, row) => {
         :rows="rows"
         :columns="props.columns"
         row-key="id"
-        flat
-        dense
-        separator="horizontal"
+        flat dense separator="horizontal"
         v-model:pagination="paginationLocal"
         :rows-per-page-options="props.rowsPerPageOptions"
         :pagination-label="(first, last, total) => `${first}-${last} de ${total} registros`"
         @request="onRequest"
       >
-        <template
-          v-for="col in visibleColumns"
-          :key="col.name"
-          #[`body-cell-${col.name}`]="{ row }"
-        >
+        <template v-for="col in visibleColumns" :key="col.name" #[`body-cell-${col.name}`]="{ row }">
           <q-td :style="col.style" class="q-pa-xs">
-          <template v-if="isEditing(row)">
-            <div style="width: 100%;">
-              <q-select
-                v-if="col.editType === 'select'"
-                v-model="row[col.editValueField || col.field]"
-                v-bind="getEditProps(col, row)"
-                class="full-width"
-              />
-
-              <q-toggle
-                v-else-if="col.editType === 'toggle'"
-                v-model="row[col.editValueField || col.field]"
-                v-bind="getEditProps(col, row)"
-              />
-
-              <q-input
-                v-else
-                v-model="row[col.editValueField || col.field]"
-                v-bind="getEditProps(col, row)"
-                class="full-width"
-              />
-            </div>
-          </template>
-          <template v-else>
-            {{ row[col.field] || '—' }}
-          </template>
-        </q-td>
+            <template v-if="isEditing(row) && isEditableCol(col, row)">
+              <div style="width: 100%;">
+                <q-select
+                  v-if="col.editType === 'select'"
+                  v-model="row[col.editValueField || col.field]"
+                  v-bind="getEditProps(col, row)"
+                  class="full-width"
+                />
+                <q-toggle
+                  v-else-if="col.editType === 'toggle'"
+                  v-model="row[col.editValueField || col.field]"
+                  v-bind="getEditProps(col, row)"
+                />
+                <q-input
+                  v-else
+                  v-model="row[col.editValueField || col.field]"
+                  v-bind="getEditProps(col, row)"
+                  class="full-width"
+                />
+              </div>
+            </template>
+            <template v-else>
+              {{ typeof col.field === 'function' ? col.field(row) : row[col.field] ?? '—' }}
+            </template>
+          </q-td>
         </template>
         <template #body-cell-actions="{ row }">
           <q-td class="text-center">
