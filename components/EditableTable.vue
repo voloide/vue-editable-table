@@ -1,36 +1,21 @@
+<!-- src/components/shared/EditableTable.vue -->
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useEditableTable } from '../composables/useEditableTable'
-import {
-  QCard,
-  QCardSection,
-  QBanner,
-  QInput,
-  QIcon,
-  QBtn,
-  QTable,
-  QTd,
-  QSelect,
-  QToggle,
-  QTooltip
-} from 'quasar'
+import { QCard, QCardSection, QBanner, QInput, QIcon, QBtn, QTable, QTd, QSelect, QToggle, QTooltip } from 'quasar'
 
 const props = defineProps({
   title: String,
-  modelValue: Array,
-  columns: Array,
-  selectOptions: {
-    type: Object,
-    default: () => ({})
-  },
-  programOptions: Array,
-  serviceOptions: Array,
-  programActivityOptions: Array,
-  provinceOptions: Array,
-  districtOptions: Array,
+  modelValue: { type: Array, default: () => [] },
+  columns: { type: Array, default: () => [] },
+
+  // ✅ ÚNICO ponto de entrada para options dos selects
+  // Ex: { provinceOptions: [...], districtOptions: [...], partnerOptions: [...] }
+  selectOptions: { type: Object, default: () => ({}) },
+
   loading: Boolean,
   pagination: Object,
-  rowsPerPageOptions: Array,
+  rowsPerPageOptions: { type: Array, default: () => [10, 20, 50, 100] },
   confirmError: Function,
   confirmDelete: Function,
   useExternalAdd: Boolean,
@@ -41,10 +26,7 @@ const props = defineProps({
   hideSearchInput: { type: Boolean, default: false },
   hideSearchButton: { type: Boolean, default: false },
   hideAddButton: { type: Boolean, default: false },
-  extraActions: {
-    type: Array,
-    default: () => []
-  }
+  extraActions: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits([
@@ -72,19 +54,25 @@ const paginationLocal = ref({
   rowsNumber: props.pagination?.rowsNumber ?? 0
 })
 
-watch(() => props.pagination, (val) => {
-  paginationLocal.value = {
-    sortBy: val?.sortBy ?? 'id',
-    descending: val?.descending ?? false,
-    page: val?.page ?? 1,
-    rowsPerPage: val?.rowsPerPage ?? 10,
-    rowsNumber: val?.rowsNumber ?? 0
+watch(
+  () => props.pagination,
+  (val) => {
+    paginationLocal.value = {
+      sortBy: val?.sortBy ?? 'id',
+      descending: val?.descending ?? false,
+      page: val?.page ?? 1,
+      rowsPerPage: val?.rowsPerPage ?? 10,
+      rowsNumber: val?.rowsNumber ?? 0
+    }
   }
-})
+)
 
-watch(() => props.pagination?.rowsNumber, (rowsNumber) => {
-  paginationLocal.value.rowsNumber = rowsNumber ?? 0
-})
+watch(
+  () => props.pagination?.rowsNumber,
+  (rowsNumber) => {
+    paginationLocal.value.rowsNumber = rowsNumber ?? 0
+  }
+)
 
 const {
   rows,
@@ -106,48 +94,47 @@ const evalFlag = (flag, row) =>
 const isEditableCol = (col, row) =>
   (col.editable === undefined ? true : evalFlag(col.editable, row)) &&
   !evalFlag(col.hideInEdit, row) &&
-  !!col.editType  // must have an editor type
+  !!col.editType
 
-const isDisabledCol = (col, row) => evalFlag(col.disabled, row)
-const isReadonlyCol = (col, row) => evalFlag(col.readonly, row)
-const isRequiredCol = (col, row) => evalFlag(col.required, row)
+const isDisabledCol = (col, row) => evalFlag(col?.disabled, row)
+const isReadonlyCol = (col, row) => evalFlag(col?.readonly, row)
 
 const getVisibleActions = computed(() => {
-  return (row) => {
-    return props.extraActions.filter(action => {
-      return typeof action.visible === 'function'
-        ? action.visible(row)
-        : action.visible !== false
-    })
-  }
+  return (row) =>
+    (props.extraActions || []).filter((action) =>
+      typeof action.visible === 'function' ? action.visible(row) : action.visible !== false
+    )
 })
 
-const onRequest = (props) => {
+const onRequest = (req) => {
   paginationLocal.value = {
-    ...props.pagination,
+    ...req.pagination,
     rowsNumber: paginationLocal.value.rowsNumber
   }
-  emit('request', props)
+  emit('request', req)
 }
 
-// retorna as props certas com base no tipo de edição
 const getEditProps = (col, row) => {
   if (col.editType === 'select') {
     let options = []
+
     if (Array.isArray(col.editOptions)) options = col.editOptions
     if (!options.length && typeof col.editOptions === 'function') {
-      const out = col.editOptions({ row, props }); if (Array.isArray(out)) options = out
+      const out = col.editOptions({ row, props })
+      if (Array.isArray(out)) options = out
     }
+
+    // ✅ pega do props.selectOptions usando a key da coluna
     if (!options.length && col.editOptionsKey) {
-      const map = props.selectOptions || {}; options = map[col.editOptionsKey] || []
+      options = props.selectOptions?.[col.editOptionsKey] || []
     }
-    if (!options.length && col.editOptionsKey && props[col.editOptionsKey]) {
-      options = props[col.editOptionsKey]
-    }
+
+    // ✅ filtro dependente
     if (col.dependsOn && col.matchField) {
       const parentValue = row[col.dependsOn]
-      options = options.filter(opt => opt[col.matchField] === parentValue)
+      options = options.filter((opt) => opt[col.matchField] === parentValue)
     }
+
     return {
       options,
       optionValue: col.optionValueKey || 'value',
@@ -158,12 +145,22 @@ const getEditProps = (col, row) => {
       outlined: true,
       placeholder: col.placeholder || 'Selecionar',
       disable: isDisabledCol(col, row),
+      readonly: isReadonlyCol(col, row),
+      multiple: !!col.multiple,
+      useChips: !!col.multiple
+    }
+  }
+
+  if (col.editType === 'toggle') {
+    return {
+      dense: true,
+      keepColor: true,
+      color: 'primary',
+      disable: isDisabledCol(col, row),
       readonly: isReadonlyCol(col, row)
     }
   }
-  if (col.editType === 'toggle') {
-    return { dense: true, keepColor: true, color: 'primary', disable: isDisabledCol(col, row), readonly: isReadonlyCol(col, row) }
-  }
+
   return {
     dense: true,
     outlined: true,
@@ -172,7 +169,6 @@ const getEditProps = (col, row) => {
     readonly: isReadonlyCol(col, row)
   }
 }
-
 </script>
 
 <template>
@@ -180,12 +176,13 @@ const getEditProps = (col, row) => {
     <q-card-section class="text-h6 q-pa-none">
       <q-banner dense inline-actions class="text-primary bg-grey-3">
         <span class="text-subtitle2 text-primary">{{ props.title }}</span>
+
         <template #action>
           <q-input
             outlined
             label="Pesquisar por Nome, descrição, Código"
             dense
-            style="width: 300px;"
+            style="width: 300px"
             color="white"
             v-model="searchParams"
             @keyup.enter="search(searchParams)"
@@ -204,7 +201,7 @@ const getEditProps = (col, row) => {
 
           <q-btn
             outline
-            style="color: goldenrod;"
+            style="color: goldenrod"
             dense
             icon="search"
             @click="search(searchParams)"
@@ -217,7 +214,7 @@ const getEditProps = (col, row) => {
 
           <q-btn
             outline
-            style="color: goldenrod;"
+            style="color: goldenrod"
             dense
             icon="add"
             class="q-ml-sm"
@@ -238,7 +235,9 @@ const getEditProps = (col, row) => {
         :rows="rows"
         :columns="props.columns"
         row-key="id"
-        flat dense separator="horizontal"
+        flat
+        dense
+        separator="horizontal"
         v-model:pagination="paginationLocal"
         :rows-per-page-options="props.rowsPerPageOptions"
         :pagination-label="(first, last, total) => `${first}-${last} de ${total} registros`"
@@ -247,7 +246,7 @@ const getEditProps = (col, row) => {
         <template v-for="col in visibleColumns" :key="col.name" #[`body-cell-${col.name}`]="{ row }">
           <q-td :style="col.style" class="q-pa-xs">
             <template v-if="isEditing(row) && isEditableCol(col, row)">
-              <div style="width: 100%;">
+              <div style="width: 100%">
                 <q-select
                   v-if="col.editType === 'select'"
                   v-model="row[col.editValueField || col.field]"
@@ -267,40 +266,54 @@ const getEditProps = (col, row) => {
                 />
               </div>
             </template>
+
             <template v-else>
               {{ typeof col.field === 'function' ? col.field(row) : row[col.field] ?? '—' }}
             </template>
           </q-td>
         </template>
+
         <template #body-cell-actions="{ row }">
           <q-td class="text-center">
             <div v-if="isEditing(row)">
               <q-btn dense flat icon="check" color="green" @click="saveRow(row)" />
               <q-btn dense flat icon="close" color="orange" @click="cancelEdit(row)" />
             </div>
+
             <div v-else class="q-gutter-sm">
               <q-btn
                 v-if="!props.hideToggleStatus"
-                dense flat
+                dense
+                flat
                 :icon="row.lifeCycleStatus === 'ACTIVE' ? 'toggle_on' : 'toggle_off'"
                 :color="row.lifeCycleStatus === 'ACTIVE' ? 'green' : 'grey'"
                 @click="toggleStatus(row)"
                 :disable="isEditingAnyRow"
               />
+
               <q-btn
                 v-if="!props.hideEdit"
-                dense flat icon="edit" color="primary"
+                dense
+                flat
+                icon="edit"
+                color="primary"
                 @click="props.useExternalEdit ? emit('edit', row) : editRow(row)"
               />
+
               <q-btn
                 v-if="!props.hideDelete"
-                dense flat icon="delete" color="red"
+                dense
+                flat
+                icon="delete"
+                color="red"
                 @click="deleteRow(row)"
               />
+
               <q-btn
                 v-for="(action, index) in getVisibleActions(row)"
                 :key="index"
-                dense flat
+                dense
+                flat
                 :icon="action.icon"
                 :color="action.color || 'primary'"
                 @click="emit(action.emit || 'extra-action', row)"
